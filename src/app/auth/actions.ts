@@ -30,7 +30,10 @@ function getSiteUrl() {
     const parsed = new URL(siteUrl);
     if (
       parsed.protocol !== "https:" &&
-      !(parsed.protocol === "http:" && parsed.hostname === "localhost")
+      !(
+        parsed.protocol === "http:" &&
+        ["localhost", "127.0.0.1"].includes(parsed.hostname)
+      )
     ) {
       return null;
     }

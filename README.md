@@ -32,10 +32,13 @@ válida. Não configure nem exponha a chave `service_role` no navegador.
 1. Crie um projeto Supabase e aplique a migração
    `supabase/migrations/20261015000000_init_gamer_profiles.sql` pelo SQL Editor
    ou pela CLI do Supabase.
-2. Configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e
-   `NEXT_PUBLIC_SITE_URL` em `.env.local`. Para desenvolvimento, use
-   `http://localhost:3000` como endereço do aplicativo. A chave anon é pública
-   por desenho; o acesso aos perfis continua protegido por RLS.
+2. No terminal integrado, execute `npm run supabase:configure`. Informe o URL
+   do projeto, a chave **publishable** (ou `anon` legado) e o endereço local do
+   aplicativo nos prompts ocultos. Use a URL/porta mostrada pelo `npm run dev`,
+   por exemplo `http://127.0.0.1:3001`. O script valida os formatos, rejeita
+   chaves `secret`/`service_role` e salva a configuração somente em
+   `.env.local`, que é ignorado pelo Git. A chave publishable/anon é pública
+   por desenho; a proteção dos perfis depende de RLS.
 3. No Supabase, habilite confirmação de e-mail e adicione
    `http://localhost:3000/auth/callback` às URLs permitidas de redirecionamento.
    Em produção, configure a URL HTTPS do site e o callback correspondente.

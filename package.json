@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "admin:hash-password": "node scripts/hash-admin-password.mjs",
-    "github:configure": "node scripts/configure-github.mjs"
+    "github:configure": "node scripts/configure-github.mjs",
+    "supabase:configure": "node scripts/configure-supabase.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
