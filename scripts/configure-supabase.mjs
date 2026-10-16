@@ -134,6 +134,25 @@ async function readExistingEnv() {
   }
 }
 
+function readEnvValue(envText, name) {
+  const match = envText.match(
+    new RegExp(`^\\s*(?:export\\s+)?${name}\\s*=\\s*(.*)\\s*$`, "m"),
+  );
+  if (!match) {
+    return "";
+  }
+
+  const value = match[1].trim();
+  if (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    return value.slice(1, -1);
+  }
+  return value;
+}
+
 async function saveConfiguration(projectUrl, publicKey, siteUrl) {
   const existingText = await readExistingEnv();
   const variableNames = [
@@ -173,10 +192,17 @@ async function saveConfiguration(projectUrl, publicKey, siteUrl) {
 }
 
 try {
+  const existingEnv = await readExistingEnv();
   process.stdin.setRawMode(true);
   process.stdin.resume();
 
-  const projectUrl = await promptHidden("Supabase project URL");
+  const savedProjectUrl = readEnvValue(
+    existingEnv,
+    "NEXT_PUBLIC_SUPABASE_URL",
+  );
+  const projectUrl = isValidProjectUrl(savedProjectUrl)
+    ? savedProjectUrl
+    : await promptHidden("Supabase project URL");
   if (!isValidProjectUrl(projectUrl)) {
     throw new Error(
       "URL inválida. Use o URL HTTPS do projeto Supabase (ou localhost para desenvolvimento local).",
@@ -192,9 +218,10 @@ try {
     );
   }
 
-  const siteUrl = await promptHidden(
-    "App URL (for example http://127.0.0.1:3001)",
-  );
+  const savedSiteUrl = readEnvValue(existingEnv, "NEXT_PUBLIC_SITE_URL");
+  const siteUrl = isValidSiteUrl(savedSiteUrl)
+    ? savedSiteUrl
+    : await promptHidden("App URL (for example http://127.0.0.1:3001)");
   if (!isValidSiteUrl(siteUrl)) {
     throw new Error(
       "URL do aplicativo inválida. Use localhost em desenvolvimento ou HTTPS em produção, sem caminhos.",
