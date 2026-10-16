@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { signOut } from "@/app/auth/actions";
 import { ProfileForm } from "./profile-form";
 import { getSupabaseConfig } from "@/lib/supabase/config";
@@ -34,6 +35,8 @@ export default async function ProfilePage({
       </main>
     );
   }
+
+  await connection();
 
   const supabase = await createClient();
   const {
