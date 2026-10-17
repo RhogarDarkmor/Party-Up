@@ -17,9 +17,9 @@ export const instant = false;
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ salvo?: string }>;
+  searchParams: Promise<{ salvo?: string; jogos_salvos?: string }>;
 }) {
-  const { salvo } = await searchParams;
+  const { salvo, jogos_salvos: jogosSalvos } = await searchParams;
   if (!getSupabaseConfig()) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0b0b10] px-6 py-12 text-white">
@@ -51,16 +51,37 @@ export default async function ProfilePage({
     redirect("/entrar");
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("gamer_profiles")
-    .select(
-      "display_name, bio, timezone, preferred_language, play_style, communication_preference",
-    )
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [
+    { data: profile, error: profileError },
+    { data: games, error: gamesError },
+    { data: selectedGames, error: selectedGamesError },
+  ] = await Promise.all([
+    supabase
+      .from("gamer_profiles")
+      .select(
+        "display_name, bio, timezone, preferred_language, play_style, communication_preference",
+      )
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("game_catalog")
+      .select("slug, name, genre")
+      .eq("is_active", true)
+      .order("name"),
+    supabase
+      .from("gamer_profile_games")
+      .select("game_slug")
+      .eq("user_id", user.id),
+  ]);
 
   if (profileError) {
     throw profileError;
+  }
+  if (gamesError) {
+    throw gamesError;
+  }
+  if (selectedGamesError) {
+    throw selectedGamesError;
   }
 
   return (
@@ -87,16 +108,20 @@ export default async function ProfilePage({
           <p className="text-sm leading-6 text-zinc-400">
             Conte como você gosta de jogar. Você poderá editar essas informações depois.
           </p>
-          {salvo === "1" ? (
+          {salvo === "1" || jogosSalvos === "1" ? (
             <p
               aria-live="polite"
               className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-3 text-sm text-emerald-200"
               role="status"
             >
-              Perfil salvo.
+              {jogosSalvos === "1" ? "Jogos salvos." : "Perfil salvo."}
             </p>
           ) : null}
-          <ProfileForm profile={profile} />
+          <ProfileForm
+            games={games ?? []}
+            profile={profile}
+            selectedGameSlugs={(selectedGames ?? []).map((game) => game.game_slug)}
+          />
         </section>
       </div>
     </main>

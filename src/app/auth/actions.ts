@@ -198,3 +198,59 @@ export async function saveProfile(
   revalidatePath("/perfil");
   redirect("/perfil?salvo=1");
 }
+
+export async function saveProfileGames(
+  _previousState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error("PartyUp profile games session lookup failed:", userError.code ?? "unknown");
+    return { error: "Sua sessão expirou. Entre novamente para salvar seus jogos." };
+  }
+  if (!user) {
+    return { error: "Sua sessão expirou. Entre novamente para salvar seus jogos." };
+  }
+
+  const submittedGames = formData.getAll("games");
+  if (submittedGames.some((game) => typeof game !== "string")) {
+    return { error: "A seleção de jogos enviada é inválida." };
+  }
+
+  const gameSlugs = [
+    ...new Set(
+      submittedGames
+        .filter((game): game is string => typeof game === "string")
+        .map((game) => game.trim()),
+    ),
+  ];
+
+  if (
+    gameSlugs.length > 20 ||
+    gameSlugs.some(
+      (slug) =>
+        slug.length > 64 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug),
+    )
+  ) {
+    return { error: "Selecione até 20 jogos válidos do catálogo." };
+  }
+
+  const { error } = await supabase.rpc("replace_current_user_games", {
+    p_game_slugs: gameSlugs,
+  });
+
+  if (error) {
+    console.error("PartyUp profile games save failed:", error.code ?? "unknown");
+    return {
+      error: "Não foi possível salvar seus jogos. Tente novamente em instantes.",
+    };
+  }
+
+  revalidatePath("/perfil");
+  redirect("/perfil?jogos_salvos=1");
+}

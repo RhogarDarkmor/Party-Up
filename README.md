@@ -18,9 +18,9 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Abra `http://localhost:3000`. Cadastro e perfis de jogadores estão disponíveis
-após configurar o Supabase. Matchmaking, catálogo de jogos e parties ainda não
-estão implementados e não simulam operações reais.
+Abra `http://localhost:3000`. Cadastro, perfis e seleção de jogos estão
+disponíveis após configurar o Supabase. Descoberta de jogadores, matchmaking
+e parties ainda não estão implementados e não simulam operações reais.
 
 ## Autenticação e perfil de jogador
 
@@ -29,9 +29,10 @@ cookies protegidos pelo servidor e atualização de tokens via `src/proxy.ts`.
 Os perfis podem ser criados e editados em `/perfil`; essa rota exige uma sessão
 válida. Não configure nem exponha a chave `service_role` no navegador.
 
-1. Crie um projeto Supabase e aplique a migração
-   `supabase/migrations/20261015000000_init_gamer_profiles.sql` pelo SQL Editor
-   ou pela CLI do Supabase.
+1. Crie um projeto Supabase e aplique, em ordem, as migrações
+   `supabase/migrations/20261015000000_init_gamer_profiles.sql` e
+   `supabase/migrations/20261016000000_game_catalog_and_profile_games.sql` pelo
+   SQL Editor ou pela CLI do Supabase.
 2. No terminal integrado, execute `npm run supabase:configure`. Informe o URL
    do projeto, a chave **publishable** (ou `anon` legado) e o endereço local do
    aplicativo nos prompts ocultos. Use a URL/porta mostrada pelo `npm run dev`,
@@ -48,6 +49,12 @@ válida. Não configure nem exponha a chave `service_role` no navegador.
 A migração atual permite a cada usuário ler e editar somente o próprio perfil.
 Descoberta pública de jogadores não está habilitada; as políticas de leitura
 precisam ser ampliadas com uma estratégia de privacidade antes do matchmaking.
+
+O catálogo inicial contém dez jogos mantidos por migração. Em `/perfil`, cada
+jogador pode selecionar até 20 jogos; suas seleções são privadas e só podem ser
+lidas ou alteradas pelo próprio usuário. Adicione títulos ao catálogo por uma
+nova migração. Descoberta de jogadores e visibilidade pública dessas seleções
+ainda não estão habilitadas.
 
 ## Configurar o acesso administrativo
 
@@ -123,10 +130,11 @@ npm run build
 
 - Fundação Next.js, TypeScript e interface inicial em português.
 - Migração inicial de `gamer_profiles` com RLS restrita ao próprio usuário.
+- Catálogo inicial de jogos e seleção privada de jogos no perfil, protegidos por RLS.
 - Login administrativo e painel de avanço protegidos no servidor.
 - Leitura de milestones, issues, commits e GitHub Actions com atualização
   periódica.
 - Cadastro, confirmação de e-mail, login e edição de perfil integrados ao
   Supabase Auth.
-- Catálogo de jogos, descoberta, parties, convites, políticas de leitura para
+- Descoberta pública de jogadores, parties, convites, políticas de leitura para
   matchmaking, testes de produto e deploy ainda precisam ser implementados.
