@@ -18,9 +18,9 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Abra `http://localhost:3000`. Cadastro, perfis e seleção de jogos estão
-disponíveis após configurar o Supabase. Descoberta de jogadores, matchmaking
-e parties ainda não estão implementados e não simulam operações reais.
+Abra `http://localhost:3000`. Cadastro, perfis, descoberta de jogadores e seleção
+de jogos estão disponíveis após configurar o Supabase. Parties ainda não estão
+implementadas e não simulam operações reais.
 
 ## Autenticação e perfil de jogador
 
@@ -30,9 +30,12 @@ Os perfis podem ser criados e editados em `/perfil`; essa rota exige uma sessão
 válida. Não configure nem exponha a chave `service_role` no navegador.
 
 1. Crie um projeto Supabase e aplique, em ordem, as migrações
-   `supabase/migrations/20261015000000_init_gamer_profiles.sql` e
-   `supabase/migrations/20261016000000_game_catalog_and_profile_games.sql` pelo
-   SQL Editor ou pela CLI do Supabase.
+   `supabase/migrations/20261015000000_init_gamer_profiles.sql`,
+   `supabase/migrations/20261016000000_game_catalog_and_profile_games.sql` e
+   `supabase/migrations/20261017000000_discovery_profiles_platforms_and_avatars.sql`,
+   `supabase/migrations/20261017010000_fix_avatar_storage_path_policies.sql` e
+   `supabase/migrations/20261017020000_explicit_bio_discovery_consent.sql`
+   pelo SQL Editor ou pela CLI do Supabase.
 2. No terminal integrado, execute `npm run supabase:configure`. Informe o URL
    do projeto, a chave **publishable** (ou `anon` legado) e o endereço local do
    aplicativo nos prompts ocultos. Use a URL/porta mostrada pelo `npm run dev`,
@@ -46,15 +49,41 @@ válida. Não configure nem exponha a chave `service_role` no navegador.
 4. Reinicie `npm run dev`, crie uma conta em `/cadastro`, confirme o e-mail e
    preencha o perfil em `/perfil`.
 
-A migração atual permite a cada usuário ler e editar somente o próprio perfil.
-Descoberta pública de jogadores não está habilitada; as políticas de leitura
-precisam ser ampliadas com uma estratégia de privacidade antes do matchmaking.
+A migração inicial permite a cada usuário ler e editar somente o próprio perfil.
+Descoberta usa uma função autenticada limitada a perfis que optaram por aparecer;
+os dados privados dos demais jogadores continuam inacessíveis.
 
 O catálogo inicial contém dez jogos mantidos por migração. Em `/perfil`, cada
 jogador pode selecionar até 20 jogos; suas seleções são privadas e só podem ser
 lidas ou alteradas pelo próprio usuário. Adicione títulos ao catálogo por uma
-nova migração. Descoberta de jogadores e visibilidade pública dessas seleções
-ainda não estão habilitadas.
+nova migração. A migração
+`supabase/migrations/20261017000000_discovery_profiles_platforms_and_avatars.sql`
+adiciona plataformas, upload privado de fotos e consentimento explícito para a
+descoberta. A migração seguinte ajusta a política do arquivo no bucket privado.
+A migração de consentimento da bio mantém esse campo oculto por padrão e reserva
+as alterações de perfil à função autenticada do aplicativo.
+A busca em `/jogadores` exige um jogo ou plataforma e mostra somente perfis que
+habilitaram a descoberta.
+
+### Foto do perfil e descoberta
+
+Em `/perfil`, o jogador pode enviar uma foto JPG, PNG ou WebP de até 5 MB,
+escolher as plataformas que usa e decidir se quer aparecer na descoberta.
+Compartilhar a bio é uma opção independente e começa desligada.
+Fotos ficam em bucket privado; somente o próprio jogador e pessoas com perfil
+visível na descoberta podem obter URLs assinadas, com validade de um minuto. A
+descoberta pode ser desativada a qualquer momento e começa desligada.
+
+### Login com redes sociais
+
+O código oferece Google, Facebook e X (OAuth 2.0) nas telas de cadastro e login.
+Para habilitar cada botão, configure o Client ID e o Client Secret do provedor
+em **Supabase Dashboard → Authentication → Sign In / Providers**. Configure o
+callback do provedor como `https://<project-ref>.supabase.co/auth/v1/callback`
+e permita `http://localhost:3000/auth/callback` em
+**Authentication → URL Configuration → Redirect URLs**. Em produção, permita
+também o callback HTTPS do site. Segredos dos provedores ficam somente no
+Dashboard Supabase; nunca os adicione ao repositório.
 
 ## Configurar o acesso administrativo
 
@@ -131,10 +160,13 @@ npm run build
 - Fundação Next.js, TypeScript e interface inicial em português.
 - Migração inicial de `gamer_profiles` com RLS restrita ao próprio usuário.
 - Catálogo inicial de jogos e seleção privada de jogos no perfil, protegidos por RLS.
+- Descoberta de jogadores por jogo, plataforma, idioma e estilo com opt-in.
+- Foto de perfil em bucket privado e badges das plataformas selecionadas.
+- Login e cadastro por e-mail e OAuth para Google, Facebook e X, após configurar
+  credenciais dos provedores no Supabase.
 - Login administrativo e painel de avanço protegidos no servidor.
 - Leitura de milestones, issues, commits e GitHub Actions com atualização
   periódica.
 - Cadastro, confirmação de e-mail, login e edição de perfil integrados ao
   Supabase Auth.
-- Descoberta pública de jogadores, parties, convites, políticas de leitura para
-  matchmaking, testes de produto e deploy ainda precisam ser implementados.
+- Parties, convites, testes de produto e deploy ainda precisam ser implementados.

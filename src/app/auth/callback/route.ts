@@ -11,6 +11,10 @@ function getSafeNextPath(value: string | null) {
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
+  const providerError = request.nextUrl.searchParams.get("error");
+  if (providerError) {
+    return NextResponse.redirect(new URL("/entrar?erro=provedor", request.url));
+  }
   if (!code || !getSupabaseConfig()) {
     return NextResponse.redirect(new URL("/entrar?erro=confirmacao", request.url));
   }

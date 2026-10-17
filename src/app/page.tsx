@@ -42,6 +42,12 @@ export default function Home() {
           </span>
           <nav aria-label="Conta" className="ml-auto flex items-center gap-3">
             <Link
+              className="hidden text-sm font-medium text-zinc-300 transition hover:text-white sm:inline"
+              href="/jogadores"
+            >
+              Jogadores
+            </Link>
+            <Link
               className="text-sm font-medium text-zinc-300 transition hover:text-white"
               href="/entrar"
             >
@@ -80,9 +86,12 @@ export default function Home() {
                 Criar meu perfil
                 <span aria-hidden="true">↗</span>
               </Link>
-              <span className="text-sm text-zinc-500">
-                Estamos preparando a primeira versão.
-              </span>
+              <Link
+                className="text-sm font-medium text-zinc-300 transition hover:text-white"
+                href="/jogadores"
+              >
+                Encontrar jogadores
+              </Link>
             </div>
             <div className="mt-14 flex flex-wrap gap-x-8 gap-y-3 text-sm text-zinc-500">
               <span className="flex items-center gap-2">

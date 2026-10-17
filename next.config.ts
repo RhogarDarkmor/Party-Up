@@ -1,9 +1,36 @@
 import type { NextConfig } from "next";
 
+function getSupabaseAvatarPattern() {
+  const value = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") {
+      return [];
+    }
+
+    return [
+      {
+        protocol: "https" as const,
+        hostname: url.hostname,
+        pathname: "/storage/v1/object/sign/partyup-avatars/**",
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  images: {
+    remotePatterns: getSupabaseAvatarPattern(),
+  },
   turbopack: {
     rules: {
       "*.css": {

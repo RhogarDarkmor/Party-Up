@@ -122,6 +122,36 @@ export async function signIn(
   redirect("/perfil");
 }
 
+export async function signInWithProvider(formData: FormData) {
+  const provider = formData.get("provider");
+  if (provider !== "google" && provider !== "facebook" && provider !== "x") {
+    redirect("/entrar?erro=provedor");
+  }
+
+  const siteUrl = getSiteUrl();
+  if (!siteUrl || !getSupabaseConfig()) {
+    redirect("/entrar?erro=provedor");
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${siteUrl}/auth/callback?next=%2Fperfil`,
+    },
+  });
+
+  if (error) {
+    console.error("PartyUp OAuth sign-in failed:", error.code ?? "unknown");
+    redirect("/entrar?erro=provedor");
+  }
+  if (!data.url) {
+    throw new Error("Supabase did not return an OAuth authorization URL.");
+  }
+
+  redirect(data.url);
+}
+
 export async function signOut() {
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
@@ -143,7 +173,11 @@ export async function saveProfile(
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+  if (userError) {
+    console.error("PartyUp profile session lookup failed:", userError.code ?? "unknown");
+    return { error: "Sua sessão expirou. Entre novamente para salvar o perfil." };
+  }
+  if (!user) {
     return { error: "Sua sessão expirou. Entre novamente para salvar o perfil." };
   }
 
@@ -153,6 +187,10 @@ export async function saveProfile(
   const preferredLanguage = getString(formData, "preferredLanguage");
   const playStyle = getString(formData, "playStyle");
   const communicationPreference = getString(formData, "communicationPreference");
+  const avatarPath = getString(formData, "avatarPath") || null;
+  const showInDiscovery = formData.get("showInDiscovery") === "on";
+  const showBioInDiscovery = formData.get("showBioInDiscovery") === "on";
+  const submittedPlatforms = formData.getAll("platforms");
 
   if (displayName.length < 2 || displayName.length > 40) {
     return { error: "Seu nome de jogador deve ter entre 2 e 40 caracteres." };
@@ -175,18 +213,41 @@ export async function saveProfile(
     return { error: "Selecione uma preferência de comunicação válida." };
   }
 
-  const { error } = await supabase.from("gamer_profiles").upsert(
-    {
-      user_id: user.id,
-      display_name: displayName,
-      bio: bio || null,
-      timezone,
-      preferred_language: preferredLanguage,
-      play_style: playStyle || null,
-      communication_preference: communicationPreference || null,
-    },
-    { onConflict: "user_id" },
-  );
+  if (submittedPlatforms.some((platform) => typeof platform !== "string")) {
+    return { error: "A seleção de plataformas enviada é inválida." };
+  }
+  const platformSlugs = [
+    ...new Set(
+      submittedPlatforms
+        .filter((platform): platform is string => typeof platform === "string")
+        .map((platform) => platform.trim()),
+    ),
+  ];
+  if (
+    platformSlugs.length > 5 ||
+    platformSlugs.some(
+      (slug) =>
+        slug.length > 64 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug),
+    )
+  ) {
+    return { error: "Selecione até 5 plataformas válidas." };
+  }
+  if (avatarPath && avatarPath !== `${user.id}/avatar`) {
+    return { error: "A foto de perfil enviada é inválida." };
+  }
+
+  const { error } = await supabase.rpc("save_current_user_profile", {
+    p_display_name: displayName,
+    p_bio: bio || null,
+    p_timezone: timezone,
+    p_preferred_language: preferredLanguage,
+    p_play_style: playStyle || null,
+    p_communication_preference: communicationPreference || null,
+    p_avatar_path: avatarPath,
+    p_show_in_discovery: showInDiscovery,
+    p_platform_slugs: platformSlugs,
+    p_show_bio: showBioInDiscovery,
+  });
 
   if (error) {
     console.error("PartyUp profile save failed:", error.code ?? "unknown");
@@ -196,7 +257,8 @@ export async function saveProfile(
   }
 
   revalidatePath("/perfil");
-  redirect("/perfil?salvo=1");
+  revalidatePath("/jogadores");
+  redirect("/perfil?perfil_salvo=1");
 }
 
 export async function saveProfileGames(

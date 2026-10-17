@@ -17,9 +17,17 @@ export const instant = false;
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ salvo?: string; jogos_salvos?: string }>;
+  searchParams: Promise<{
+    salvo?: string;
+    jogos_salvos?: string;
+    perfil_salvo?: string;
+  }>;
 }) {
-  const { salvo, jogos_salvos: jogosSalvos } = await searchParams;
+  const {
+    salvo,
+    jogos_salvos: jogosSalvos,
+    perfil_salvo: perfilSalvo,
+  } = await searchParams;
   if (!getSupabaseConfig()) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0b0b10] px-6 py-12 text-white">
@@ -45,6 +53,9 @@ export default async function ProfilePage({
   } = await supabase.auth.getUser();
 
   if (userError) {
+    if (userError.name === "AuthSessionMissingError") {
+      redirect("/entrar");
+    }
     throw userError;
   }
   if (!user) {
@@ -55,11 +66,13 @@ export default async function ProfilePage({
     { data: profile, error: profileError },
     { data: games, error: gamesError },
     { data: selectedGames, error: selectedGamesError },
+    { data: platforms, error: platformsError },
+    { data: selectedPlatforms, error: selectedPlatformsError },
   ] = await Promise.all([
     supabase
       .from("gamer_profiles")
       .select(
-        "display_name, bio, timezone, preferred_language, play_style, communication_preference",
+        "display_name, bio, timezone, preferred_language, play_style, communication_preference, avatar_path, show_in_discovery, privacy_settings",
       )
       .eq("user_id", user.id)
       .maybeSingle(),
@@ -72,6 +85,15 @@ export default async function ProfilePage({
       .from("gamer_profile_games")
       .select("game_slug")
       .eq("user_id", user.id),
+    supabase
+      .from("platform_catalog")
+      .select("slug, name, badge")
+      .eq("is_active", true)
+      .order("name"),
+    supabase
+      .from("gamer_profile_platforms")
+      .select("platform_slug")
+      .eq("user_id", user.id),
   ]);
 
   if (profileError) {
@@ -83,6 +105,23 @@ export default async function ProfilePage({
   if (selectedGamesError) {
     throw selectedGamesError;
   }
+  if (platformsError) {
+    throw platformsError;
+  }
+  if (selectedPlatformsError) {
+    throw selectedPlatformsError;
+  }
+
+  let avatarUrl: string | null = null;
+  if (profile?.avatar_path) {
+    const { data, error } = await supabase.storage
+      .from("partyup-avatars")
+      .createSignedUrl(profile.avatar_path, 60);
+    if (error) {
+      throw error;
+    }
+    avatarUrl = data.signedUrl;
+  }
 
   return (
     <main className="min-h-screen bg-[#0b0b10] px-6 py-12 text-white">
@@ -93,6 +132,12 @@ export default async function ProfilePage({
               PartyUp
             </Link>
             <h1 className="mt-3 text-3xl font-bold tracking-tight">Seu perfil gamer</h1>
+            <Link
+              className="mt-2 inline-block text-sm font-medium text-emerald-300 hover:text-emerald-200"
+              href="/jogadores"
+            >
+              Encontrar jogadores
+            </Link>
           </div>
           <form action={signOut}>
             <button
@@ -108,19 +153,28 @@ export default async function ProfilePage({
           <p className="text-sm leading-6 text-zinc-400">
             Conte como você gosta de jogar. Você poderá editar essas informações depois.
           </p>
-          {salvo === "1" || jogosSalvos === "1" ? (
+          {salvo === "1" || jogosSalvos === "1" || perfilSalvo === "1" ? (
             <p
               aria-live="polite"
               className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-3 text-sm text-emerald-200"
               role="status"
             >
-              {jogosSalvos === "1" ? "Jogos salvos." : "Perfil salvo."}
+              {jogosSalvos === "1"
+                ? "Jogos salvos."
+                : perfilSalvo === "1"
+                  ? "Perfil atualizado."
+                  : "Perfil salvo."}
             </p>
           ) : null}
           <ProfileForm
             games={games ?? []}
+            avatarUrl={avatarUrl}
             profile={profile}
+            platforms={platforms ?? []}
             selectedGameSlugs={(selectedGames ?? []).map((game) => game.game_slug)}
+            selectedPlatformSlugs={(selectedPlatforms ?? []).map(
+              (platform) => platform.platform_slug,
+            )}
           />
         </section>
       </div>

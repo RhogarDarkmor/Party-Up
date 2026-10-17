@@ -39,6 +39,16 @@ export default async function SignInPage({
             Não foi possível confirmar o e-mail. Solicite um novo link de confirmação.
           </p>
         ) : null}
+        {erro === "provedor" ? (
+          <p
+            aria-live="polite"
+            className="mt-5 rounded-xl border border-rose-300/20 bg-rose-300/5 p-4 text-sm text-rose-200"
+            role="alert"
+          >
+            Não foi possível entrar com essa rede. Verifique se o provedor está
+            habilitado nas configurações de autenticação.
+          </p>
+        ) : null}
         {isConfigured ? (
           <AuthForm action={signIn} mode="sign-in" />
         ) : (
