@@ -19,8 +19,8 @@ npm run dev
 ```
 
 Abra `http://localhost:3000`. Cadastro, perfis, descoberta de jogadores e seleção
-de jogos estão disponíveis após configurar o Supabase. Parties ainda não estão
-implementadas e não simulam operações reais.
+de jogos estão disponíveis após configurar o Supabase. O feed de parties permite
+publicar e encontrar equipes abertas com vagas.
 
 ## Autenticação e perfil de jogador
 
@@ -34,7 +34,8 @@ válida. Não configure nem exponha a chave `service_role` no navegador.
    `supabase/migrations/20261016000000_game_catalog_and_profile_games.sql` e
    `supabase/migrations/20261017000000_discovery_profiles_platforms_and_avatars.sql`,
    `supabase/migrations/20261017010000_fix_avatar_storage_path_policies.sql` e
-   `supabase/migrations/20261017020000_explicit_bio_discovery_consent.sql`
+   `supabase/migrations/20261017020000_explicit_bio_discovery_consent.sql` e
+   `supabase/migrations/20261017180000_parties_feed_and_game_activity.sql`
    pelo SQL Editor ou pela CLI do Supabase.
 2. No terminal integrado, execute `npm run supabase:configure`. Informe o URL
    do projeto, a chave **publishable** (ou `anon` legado) e o endereço local do
@@ -64,6 +65,21 @@ A migração de consentimento da bio mantém esse campo oculto por padrão e res
 as alterações de perfil à função autenticada do aplicativo.
 A busca em `/jogadores` exige um jogo ou plataforma e mostra somente perfis que
 habilitaram a descoberta.
+
+### Feed de parties e atividade por jogo
+
+Em `/parties`, jogadores autenticados podem filtrar parties abertas com vagas
+por jogo, modo, faixa de horário local e idioma. O horário exibido e a faixa
+filtrada usam o fuso horário salvo no perfil. Em `/parties/nova`, o anfitrião
+publica jogo, modo, horário, idioma, tamanho da equipe e detalhes; ele ocupa a
+primeira vaga automaticamente. Outros jogadores podem entrar ou sair enquanto
+a party ainda tiver vagas, e o anfitrião pode cancelá-la.
+
+O perfil privado em `/perfil` mostra o gráfico de parties por jogo. Os perfis
+públicos de jogadores só exibem esse gráfico quando a descoberta está habilitada.
+A participação do anfitrião e de quem entrou na equipe é registrada no banco;
+parties canceladas não entram nas estatísticas. Sem histórico, o perfil explica
+como o gráfico será preenchido.
 
 ### Foto do perfil e descoberta
 
@@ -169,4 +185,4 @@ npm run build
   periódica.
 - Cadastro, confirmação de e-mail, login e edição de perfil integrados ao
   Supabase Auth.
-- Parties, convites, testes de produto e deploy ainda precisam ser implementados.
+- Convites, testes de produto e deploy ainda precisam ser implementados.

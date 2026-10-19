@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { signOut } from "@/app/auth/actions";
+import { PartyGameChart } from "@/app/party-game-chart";
 import { ProfileForm } from "./profile-form";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
@@ -68,6 +69,7 @@ export default async function ProfilePage({
     { data: selectedGames, error: selectedGamesError },
     { data: platforms, error: platformsError },
     { data: selectedPlatforms, error: selectedPlatformsError },
+    { data: partyGameStats, error: partyGameStatsError },
   ] = await Promise.all([
     supabase
       .from("gamer_profiles")
@@ -94,6 +96,7 @@ export default async function ProfilePage({
       .from("gamer_profile_platforms")
       .select("platform_slug")
       .eq("user_id", user.id),
+    supabase.rpc("get_party_game_activity", { p_user_id: user.id }),
   ]);
 
   if (profileError) {
@@ -110,6 +113,9 @@ export default async function ProfilePage({
   }
   if (selectedPlatformsError) {
     throw selectedPlatformsError;
+  }
+  if (partyGameStatsError) {
+    throw partyGameStatsError;
   }
 
   let avatarUrl: string | null = null;
@@ -137,6 +143,12 @@ export default async function ProfilePage({
               href="/jogadores"
             >
               Encontrar jogadores
+            </Link>
+            <Link
+              className="mt-2 ml-4 inline-block text-sm font-medium text-violet-300 hover:text-violet-200"
+              href="/parties"
+            >
+              Ver parties
             </Link>
           </div>
           <form action={signOut}>
@@ -177,6 +189,7 @@ export default async function ProfilePage({
             )}
           />
         </section>
+        <PartyGameChart games={partyGameStats ?? []} />
       </div>
     </main>
   );

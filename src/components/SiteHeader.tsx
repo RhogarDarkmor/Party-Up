@@ -13,6 +13,7 @@ export default function SiteHeader() {
         PartyUp
       </Link>
       <nav className="pu-nav" aria-label="Principal">
+        <Link href="/parties">Parties</Link>
         <Link href="/jogadores">Jogadores</Link>
         <Link href="/entrar">Entrar</Link>
         <Link href="/cadastro" className="pu-btn pu-btn--primary">

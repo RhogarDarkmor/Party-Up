@@ -186,12 +186,20 @@ export default async function PlayersPage({
               escolheram participar da descoberta.
             </p>
           </div>
-          <Link
-            className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
-            href="/perfil"
-          >
-            Meu perfil
-          </Link>
+          <nav aria-label="Navegação da conta" className="flex flex-wrap gap-3">
+            <Link
+              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+              href="/parties"
+            >
+              Parties
+            </Link>
+            <Link
+              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+              href="/perfil"
+            >
+              Meu perfil
+            </Link>
+          </nav>
         </header>
 
         <form
@@ -314,7 +322,12 @@ export default async function PlayersPage({
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-white">
-                        {player.display_name}
+                        <Link
+                          className="transition hover:text-violet-200"
+                          href={`/jogadores/${player.player_id}`}
+                        >
+                          {player.display_name}
+                        </Link>
                       </h2>
                       <p className="mt-1 text-xs text-zinc-400">
                         {player.preferred_language} ·{" "}

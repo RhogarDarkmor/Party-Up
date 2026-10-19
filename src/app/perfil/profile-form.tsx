@@ -309,8 +309,9 @@ export function ProfileForm({
               Quero aparecer na descoberta de jogadores
             </span>
             <span className="mt-1 block text-xs leading-5 text-zinc-400">
-              Seu nome gamer, foto, plataformas e jogos serão mostrados a outros
-              jogadores conectados. Você pode desativar isso quando quiser.
+              Seu nome gamer, foto, plataformas, jogos e gráfico de participação
+              em parties serão mostrados a outros jogadores conectados. Você pode
+              desativar isso quando quiser.
             </span>
           </span>
         </label>
