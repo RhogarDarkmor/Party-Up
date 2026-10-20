@@ -42,6 +42,7 @@ type PartyPost = {
   party_id: string;
   title: string;
   description: string | null;
+  contact_info: string | null;
   game_slug: string;
   game_name: string;
   game_genre: string;
@@ -401,6 +402,13 @@ export default async function PartiesPage({
                       </span>
                     </p>
                   </div>
+
+                  {party.contact_info && party.viewer_is_member ? (
+                    <div className="mt-5 rounded-xl border border-violet-300/20 bg-violet-300/5 p-4 text-sm text-violet-200">
+                      <span className="block text-xs text-violet-400">Contato da Party</span>
+                      <p className="mt-1 font-mono">{party.contact_info}</p>
+                    </div>
+                  ) : null}
 
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
                     <div className="flex min-w-0 items-center gap-3">

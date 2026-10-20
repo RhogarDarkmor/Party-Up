@@ -38,6 +38,7 @@ export async function createParty(formData: FormData) {
   const gameSlug = getString(formData, "game");
   const title = getString(formData, "title");
   const description = getString(formData, "description");
+  const contactInfo = getString(formData, "contactInfo");
   const gameMode = getString(formData, "mode");
   const startsAt = getString(formData, "startsAt");
   const language = getString(formData, "language");
@@ -48,6 +49,7 @@ export async function createParty(formData: FormData) {
     title.length < 3 ||
     title.length > 80 ||
     description.length > 500 ||
+    contactInfo.length > 200 ||
     !gameModes.includes(gameMode as (typeof gameModes)[number]) ||
     !languages.includes(language as (typeof languages)[number]) ||
     !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(startsAt) ||
@@ -64,6 +66,7 @@ export async function createParty(formData: FormData) {
     p_game_slug: gameSlug,
     p_title: title,
     p_description: description || null,
+    p_contact_info: contactInfo || null,
     p_game_mode: gameMode,
     p_starts_at: `${startsAt}:00`,
     p_language: language,

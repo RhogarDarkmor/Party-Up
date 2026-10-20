@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
-import { PartyGameChart } from "@/app/party-game-chart";
+import { PartyGameChart, type PartyGameStat } from "@/app/party-game-chart";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
@@ -80,6 +80,12 @@ export default async function GamerPublicProfilePage({
     notFound();
   }
 
+  const totalParties = (partyGameStats ?? []).reduce(
+    (sum: number, game: PartyGameStat) => sum + game.party_count,
+    0,
+  );
+  const isVeteran = totalParties >= 5;
+
   let avatarUrl: string | null = null;
   if (profile.avatar_path) {
     const { data, error } = await supabase.storage
@@ -134,7 +140,14 @@ export default async function GamerPublicProfilePage({
               )}
             </div>
             <div>
-              <h2 className="text-2xl font-semibold">{profile.display_name}</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-semibold">{profile.display_name}</h2>
+                {isVeteran ? (
+                  <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-300 ring-1 ring-inset ring-amber-500/20">
+                    VETERANO
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-2 text-sm text-zinc-400">
                 {profile.preferred_language}
                 {profile.play_style ? ` · ${profile.play_style}` : ""}

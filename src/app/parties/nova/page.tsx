@@ -229,6 +229,17 @@ export default async function NewPartyPage({
               placeholder="Conte o que a equipe vai jogar ou combinar."
             />
           </label>
+          <label className="text-sm font-medium text-zinc-200 sm:col-span-2" htmlFor="contactInfo">
+            Contato <span className="font-normal text-zinc-500">(Discord, BattleTag, etc. - visível apenas para membros)</span>
+            <input
+              className={fieldClass}
+              id="contactInfo"
+              maxLength={200}
+              name="contactInfo"
+              placeholder="Ex: Discord: usuario#1234"
+              required
+            />
+          </label>
           <label className="text-sm font-medium text-zinc-200" htmlFor="startsAt">
             Horário da partida
             <input
