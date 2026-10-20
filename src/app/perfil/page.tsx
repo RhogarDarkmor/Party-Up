@@ -150,6 +150,12 @@ export default async function ProfilePage({
             >
               Ver parties
             </Link>
+            <Link
+              className="mt-2 ml-4 inline-block text-sm font-medium text-violet-300 hover:text-violet-200"
+              href="/amizades"
+            >
+              Amizades
+            </Link>
           </div>
           <form action={signOut}>
             <button

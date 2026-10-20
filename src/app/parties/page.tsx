@@ -220,6 +220,12 @@ export default async function PartiesPage({
           <div className="flex flex-wrap gap-3">
             <Link
               className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+              href="/amizades"
+            >
+              Amizades
+            </Link>
+            <Link
+              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
               href="/perfil"
             >
               Meu perfil

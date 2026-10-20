@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
+import { respondToFriendRequest, sendFriendRequest } from "@/app/amizades/actions";
 import { PartyGameChart, type PartyGameStat } from "@/app/party-game-chart";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseConfig } from "@/lib/supabase/config";
@@ -16,10 +17,12 @@ export const instant = false;
 
 export default async function GamerPublicProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ playerId: string }>;
+  searchParams: Promise<{ amizade?: string }>;
 }) {
-  const { playerId } = await params;
+  const [{ playerId }, { amizade }] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(playerId)) {
     notFound();
   }
@@ -49,6 +52,7 @@ export default async function GamerPublicProfilePage({
     { data: profileRows, error: profileError },
     { data: partyGameStats, error: partyGameStatsError },
     { data: platformCatalog, error: platformsError },
+    { data: friendshipRows, error: friendshipError },
   ] = await Promise.all([
     supabase.rpc("get_discoverable_gamer_profile", {
       p_player_id: playerId,
@@ -60,6 +64,7 @@ export default async function GamerPublicProfilePage({
       .from("platform_catalog")
       .select("slug, name, badge")
       .eq("is_active", true),
+    supabase.rpc("get_friend_request_status", { p_player_id: playerId }),
   ]);
 
   if (profileError) {
@@ -74,11 +79,23 @@ export default async function GamerPublicProfilePage({
   if (platformsError) {
     throw platformsError;
   }
+  if (friendshipError) {
+    throw friendshipError;
+  }
 
   const profile = profileRows?.[0];
   if (!profile) {
     notFound();
   }
+  const friendship = friendshipRows?.[0];
+  const incomingRequest =
+    friendship?.request_status === "pending" && friendship.requester_id !== user.id;
+  const friendshipNotice =
+    amizade === "enviado"
+      ? "Pedido de amizade enviado."
+      : amizade === "erro"
+        ? "Não foi possível enviar o pedido. Confira seus pedidos de amizade."
+        : "";
 
   const totalParties = (partyGameStats ?? []).reduce(
     (sum: number, game: PartyGameStat) => sum + game.party_count,
@@ -118,6 +135,12 @@ export default async function GamerPublicProfilePage({
             href="/perfil"
           >
             Meu perfil
+          </Link>
+          <Link
+            className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+            href="/amizades"
+          >
+            Amizades
           </Link>
         </header>
 
@@ -202,6 +225,84 @@ export default async function GamerPublicProfilePage({
             )}
           </div>
         </section>
+
+        {friendshipNotice ? (
+          <p
+            aria-live="polite"
+            className={`mt-6 rounded-xl border p-4 text-sm ${
+              amizade === "erro"
+                ? "border-rose-300/20 bg-rose-300/5 text-rose-200"
+                : "border-emerald-300/20 bg-emerald-300/5 text-emerald-200"
+            }`}
+            role={amizade === "erro" ? "alert" : "status"}
+          >
+            {friendshipNotice}
+          </p>
+        ) : null}
+
+        {playerId !== user.id ? (
+          <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#111118] p-5">
+            <div>
+              <h2 className="font-semibold">Amizade</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                {friendship?.request_status === "accepted"
+                  ? "Vocês já são amigos."
+                  : incomingRequest
+                    ? "Este jogador enviou um pedido de amizade."
+                    : friendship?.request_status === "pending"
+                      ? "Pedido enviado · aguardando resposta."
+                      : friendship?.request_status === "declined" &&
+                          friendship.requester_id === user.id
+                        ? "Seu pedido foi recusado."
+                        : "Conecte-se com este jogador para jogar juntos."}
+              </p>
+            </div>
+            {incomingRequest ? (
+              <div className="flex flex-wrap gap-2">
+                <form action={respondToFriendRequest}>
+                  <input name="playerId" type="hidden" value={playerId} />
+                  <input name="response" type="hidden" value="aceitar" />
+                  <button
+                    className="rounded-xl bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-400"
+                    type="submit"
+                  >
+                    Aceitar
+                  </button>
+                </form>
+                <form action={respondToFriendRequest}>
+                  <input name="playerId" type="hidden" value={playerId} />
+                  <input name="response" type="hidden" value="recusar" />
+                  <button
+                    className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                    type="submit"
+                  >
+                    Recusar
+                  </button>
+                </form>
+              </div>
+            ) : friendship?.request_status === "accepted" ||
+              friendship?.request_status === "pending" ||
+              (friendship?.request_status === "declined" &&
+                friendship.requester_id === user.id) ? (
+              <Link
+                className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                href="/amizades"
+              >
+                Ver amizades
+              </Link>
+            ) : (
+              <form action={sendFriendRequest}>
+                <input name="playerId" type="hidden" value={playerId} />
+                <button
+                  className="rounded-xl bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-400"
+                  type="submit"
+                >
+                  Enviar pedido
+                </button>
+              </form>
+            )}
+          </section>
+        ) : null}
 
         <PartyGameChart
           games={partyGameStats ?? []}

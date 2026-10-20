@@ -35,7 +35,9 @@ válida. Não configure nem exponha a chave `service_role` no navegador.
    `supabase/migrations/20261017000000_discovery_profiles_platforms_and_avatars.sql`,
    `supabase/migrations/20261017010000_fix_avatar_storage_path_policies.sql` e
    `supabase/migrations/20261017020000_explicit_bio_discovery_consent.sql` e
-   `supabase/migrations/20261017180000_parties_feed_and_game_activity.sql`
+   `supabase/migrations/20261017180000_parties_feed_and_game_activity.sql`,
+   `supabase/migrations/20261019180000_add_contact_info_to_parties.sql` e
+   `supabase/migrations/20261019220000_add_player_friend_requests.sql`
    pelo SQL Editor ou pela CLI do Supabase.
 2. No terminal integrado, execute `npm run supabase:configure`. Informe o URL
    do projeto, a chave **publishable** (ou `anon` legado) e o endereço local do
@@ -65,6 +67,14 @@ A migração de consentimento da bio mantém esse campo oculto por padrão e res
 as alterações de perfil à função autenticada do aplicativo.
 A busca em `/jogadores` exige um jogo ou plataforma e mostra somente perfis que
 habilitaram a descoberta.
+
+### Amizades
+
+Em `/jogadores`, abra o perfil de alguém visível na descoberta para enviar um
+pedido de amizade. Em `/amizades`, os jogadores podem aceitar ou recusar pedidos
+recebidos e consultar pedidos enviados e amizades aceitas. O banco valida cada
+operação usando a sessão autenticada e não permite acesso direto à tabela de
+pedidos.
 
 ### Feed de parties e atividade por jogo
 
